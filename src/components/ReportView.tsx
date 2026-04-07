@@ -55,7 +55,7 @@ export default function ReportView({ report }: { report: unknown }) {
   const [feedbackImprove, setFeedbackImprove] = useState('');
   const [feedbackEmail, setFeedbackEmail] = useState('');
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
-  const cleanText = (text: string) => text?.replace(/<cite[^>]*>|<\/cite>/g, '') || '';
+  const clean = (text: string) => text?.replace(/<[^>]*>/g, '') || '';
 
   const marketShareData = (r.marketShareData?.labels || []).map((label: string, i: number) => ({
     name: label,
@@ -161,10 +161,10 @@ export default function ReportView({ report }: { report: unknown }) {
       {/* KPI cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[
-          { label: t('report.metrics.marketSize'), value: r.marketSize },
+          { label: t('report.metrics.marketSize'), value: clean(r.marketSize) },
           { label: t('report.metrics.competitors'), value: r.competitors?.length },
-          { label: t('report.metrics.concentration'), value: r.concentration },
-          { label: t('report.metrics.projected'), value: r.marketSizeProjected }
+          { label: t('report.metrics.concentration'), value: clean(r.concentration) },
+          { label: t('report.metrics.projected'), value: clean(r.marketSizeProjected) }
         ].map((m, i) => (
           <div key={i} className="bg-gray-50 rounded-lg p-4">
             <div className="text-xs text-gray-400 mb-1">{m.label}</div>
@@ -184,11 +184,11 @@ export default function ReportView({ report }: { report: unknown }) {
             </span>
             <div className="space-y-1">
               {[
-                [t('report.competitorFields.valuation'), c.valuation],
-                [t('report.competitorFields.revenue'), c.revenue],
+                [t('report.competitorFields.valuation'), clean(c.valuation || '')],
+                [t('report.competitorFields.revenue'), clean(c.revenue || '')],
                 [t('report.competitorFields.share'), c.marketShare != null ? `${c.marketShare}%` : '—'],
-                [t('report.competitorFields.growth'), c.growth],
-                [t('report.competitorFields.strength'), c.strength]
+                [t('report.competitorFields.growth'), clean(c.growth || '')],
+                [t('report.competitorFields.strength'), clean(c.strength || '')]
               ].map(([label, val], j) => (
                 <div key={j} className="text-xs text-gray-400">{label}: <span className="text-gray-700 font-medium">{val}</span></div>
               ))}
@@ -233,8 +233,8 @@ export default function ReportView({ report }: { report: unknown }) {
               <div key={i} className="flex gap-3">
                 <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: impactDots[tr.impact] || '#888' }} />
                 <div>
-                  <div className="text-sm text-gray-800 leading-snug">{tr.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{tr.description}</div>
+                  <div className="text-sm text-gray-800 leading-snug">{clean(tr.title)}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{clean(tr.description)}</div>
                 </div>
               </div>
             ))}
@@ -251,7 +251,7 @@ export default function ReportView({ report }: { report: unknown }) {
             <div key={key} className={`${s.bg} p-4`}>
               <div className={`text-xs font-semibold uppercase tracking-wider ${s.label} mb-3`}>{t(`report.swotLabels.${key}`)}</div>
               {(r.swot?.[key] || []).map((item: string, i: number) => (
-                <div key={i} className={`text-xs ${s.text} leading-relaxed`}>· {item}</div>
+                <div key={i} className={`text-xs ${s.text} leading-relaxed`}>· {clean(item)}</div>
               ))}
             </div>
           );
@@ -261,9 +261,9 @@ export default function ReportView({ report }: { report: unknown }) {
       {/* Summary + Strategy */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
         <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">{t('report.sections.summary')}</div>
-        <p className="text-sm text-gray-700 leading-relaxed mb-4">{cleanText(r.summary)}</p>
+        <p className="text-sm text-gray-700 leading-relaxed mb-4">{clean(r.summary)}</p>
         <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">{t('report.sections.strategy')}</div>
-        <p className="text-sm text-gray-700 leading-relaxed">{cleanText(r.strategy)}</p>
+        <p className="text-sm text-gray-700 leading-relaxed">{clean(r.strategy)}</p>
       </div>
 
       {/* Sources */}
