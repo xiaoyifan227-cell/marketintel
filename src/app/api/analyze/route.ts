@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
   const systemPrompt = isZh
     ? `【最高优先级】你必须严格遵守用户指定的目标市场限制，这是最高优先级要求，高于一切其他考虑。
 
-你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。【绝对禁止】所有字段的值必须是纯文本字符串，严禁在任何字段中使用任何 HTML 标签，包括但不限于 <cite>、</cite>、<a>、<b>、<span> 等，严禁使用引用标记、上下标或任何标记语言语法。违反此规则会导致整个报告无法显示。${marketInstruction}
+你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。【JSON完整性最高优先级】你的回复必须是完整的JSON，宁可每个字段内容短一点，也要保证JSON结构完整不被截断。【绝对禁止】所有字段的值必须是纯文本字符串，严禁在任何字段中使用任何 HTML 标签，包括但不限于 <cite>、</cite>、<a>、<b>、<span> 等，严禁使用引用标记、上下标或任何标记语言语法。违反此规则会导致整个报告无法显示。${marketInstruction}
 
 JSON 结构：
 {
@@ -176,7 +176,7 @@ JSON 结构：
 ${styleOverride}`
     : `[HIGHEST PRIORITY] You must strictly follow the target market restriction specified by the user. This is the highest priority requirement, overriding all other considerations.
 
-You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. [ABSOLUTE RULE] Every field value must be plain text only — never use any HTML tags in any field, including <cite>, </cite>, <a>, <b>, <span>, or any other tag. Never use citation markers, superscripts, or any markup syntax. Violations will cause the entire report to fail to render. ${marketInstruction}
+You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. [JSON COMPLETENESS — HIGHEST PRIORITY] Your response must be a complete, valid JSON object. Keep individual field content shorter if needed, but never truncate the JSON structure. [ABSOLUTE RULE] Every field value must be plain text only — never use any HTML tags in any field, including <cite>, </cite>, <a>, <b>, <span>, or any other tag. Never use citation markers, superscripts, or any markup syntax. Violations will cause the entire report to fail to render. ${marketInstruction}
 
 JSON structure:
 {
@@ -261,7 +261,7 @@ JSON structure:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const msgStream = (client.messages as any).stream({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
+          max_tokens: 5000,
           system: systemPrompt,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{ role: 'user', content: buildUserMessage(query, market, isZh) }]
@@ -298,11 +298,19 @@ JSON structure:
           .map(b => b.text)
           .join('');
 
-        const start = fullText.indexOf('{');
-        const end = fullText.lastIndexOf('}');
-        if (start === -1 || end === -1) throw new Error('Invalid JSON response from model');
-
-        const reportData = JSON.parse(fullText.slice(start, end + 1));
+        let reportData;
+        try {
+          const start = fullText.indexOf('{');
+          const end = fullText.lastIndexOf('}');
+          if (start === -1 || end === -1) throw new Error('No JSON');
+          let jsonStr = fullText.slice(start, end + 1);
+          jsonStr = jsonStr.replace(/<[^>]*>/g, '');
+          jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+          reportData = JSON.parse(jsonStr);
+        } catch(e) {
+          emit({ error: '报告解析失败，请重试' });
+          return;
+        }
         reportData.id = uuidv4();
 
         emit({ done: true, report: reportData });
