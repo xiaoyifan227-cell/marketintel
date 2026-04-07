@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,6 @@ export default function Home() {
   const [style, setStyle] = useState('concise');
   const [loading, setLoading] = useState(false);
   const [progressLines, setProgressLines] = useState<string[]>([]);
-  const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState('');
 
   const markets = ['global', 'china', 'northAmerica', 'sea'] as const;
@@ -23,7 +22,6 @@ export default function Home() {
     setError('');
     setLoading(true);
     setProgressLines([]);
-    setStreamingText('');
 
     try {
       const res = await fetch('/api/analyze', {
@@ -61,10 +59,6 @@ export default function Home() {
             setProgressLines(prev => [...prev, json.text as string]);
           }
 
-          if (json.chunk) {
-            setStreamingText(prev => prev + (json.chunk as string));
-          }
-
           if (json.done && json.report) {
             const report = json.report as Record<string, unknown>;
             localStorage.setItem(`report_${report.id}`, JSON.stringify(report));
@@ -83,7 +77,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-[#F7F7F5]">
         <Navbar />
-        <LoadingDisplay lines={progressLines} streamingText={streamingText} />
+        <LoadingDisplay lines={progressLines} />
       </div>
     );
   }
@@ -160,66 +154,54 @@ export default function Home() {
   );
 }
 
-// Infer a friendly progress step from the accumulated JSON text
-function inferStep(text: string, isZh: boolean): string {
-  if (text.includes('"sources"'))      return isZh ? '即将完成，整理数据来源…' : 'Almost done, compiling sources…';
-  if (text.includes('"strategy"'))     return isZh ? '正在撰写差异化策略建议…' : 'Writing differentiation strategy…';
-  if (text.includes('"trends"'))       return isZh ? '正在分析行业趋势…' : 'Analysing industry trends…';
-  if (text.includes('"swot"'))         return isZh ? '正在生成 SWOT 分析…' : 'Generating SWOT analysis…';
-  if (text.includes('"revenueHistory"')) return isZh ? '正在整理营收历史数据…' : 'Compiling revenue history…';
-  if (text.includes('"marketShareData"')) return isZh ? '正在计算市场份额分布…' : 'Calculating market share…';
-  if (text.includes('"competitors"'))  return isZh ? '正在分析各竞品详情…' : 'Analysing competitor details…';
-  if (text.includes('"marketSize"'))   return isZh ? '正在获取市场规模数据…' : 'Fetching market size data…';
-  if (text.includes('"summary"'))      return isZh ? '正在撰写执行摘要…' : 'Writing executive summary…';
-  if (text.includes('"product"'))      return isZh ? '正在整理报告结构…' : 'Structuring the report…';
-  return isZh ? '正在生成报告内容…' : 'Generating report content…';
-}
+function LoadingDisplay({ lines }: { lines: string[] }) {
+  const { t } = useLanguage();
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-function LoadingDisplay({ lines, streamingText }: { lines: string[]; streamingText: string }) {
-  const { t, locale } = useLanguage();
-  const isZh = locale === 'zh';
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [lines]);
 
-  // Build the full list of steps shown to the user
-  const streamStep = streamingText.length > 0 ? inferStep(streamingText, isZh) : null;
-  const allSteps = streamStep ? [...lines, streamStep] : lines;
-
-  const progress = Math.min(10 + lines.length * 18 + (streamingText.length > 0 ? Math.min(streamingText.length / 60, 32) : 0), 95);
+  const progress = Math.min(10 + lines.length * 22, 90);
 
   return (
-    <div className="max-w-xl mx-auto px-4 pt-20 pb-16">
-      <h2 className="text-lg font-medium text-gray-800 mb-1">{t('loading.title')}</h2>
+    <div className="max-w-xl mx-auto px-4 pt-24">
+      <h2 className="text-lg font-medium text-gray-800 mb-2">{t('loading.title')}</h2>
       <p className="text-xs text-gray-400 mb-5">{t('loading.found')}</p>
 
       {/* progress bar */}
       <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-6">
         <div
-          className="h-full bg-[#1A5FA8] rounded-full transition-all duration-500"
+          className="h-full bg-[#1A5FA8] rounded-full transition-all duration-700"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* step log */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2.5 min-h-[160px]">
-        {allSteps.length === 0 && (
-          <div className="text-xs text-gray-300 animate-pulse">initializing…</div>
+      {/* live log */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 font-mono text-xs space-y-2 min-h-[140px]">
+        {lines.length === 0 && (
+          <div className="text-gray-300 animate-pulse">initializing…</div>
         )}
-        {allSteps.map((line, i) => {
-          const isLast = i === allSteps.length - 1;
-          const isStreaming = isLast && streamingText.length > 0;
-          return (
-            <div key={i} className="flex items-start gap-2">
-              <span className={`mt-px text-xs ${isLast ? 'text-[#1A5FA8]' : 'text-green-500'}`}>
-                {isLast ? '›' : '✓'}
-              </span>
-              <span className={`text-xs leading-relaxed ${isLast ? 'text-gray-800' : 'text-gray-400'}`}>
-                {line}
-              </span>
-              {isStreaming && (
-                <span className="inline-block w-1.5 h-3.5 bg-[#1A5FA8] animate-pulse rounded-sm ml-0.5 mt-px" />
-              )}
-            </div>
-          );
-        })}
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-2 animate-fade-in"
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
+            <span className={i === lines.length - 1 ? 'text-[#1A5FA8]' : 'text-green-500'}>
+              {i === lines.length - 1 ? '›' : '✓'}
+            </span>
+            <span className={i === lines.length - 1 ? 'text-gray-700' : 'text-gray-400'}>
+              {line}
+            </span>
+          </div>
+        ))}
+        {lines.length > 0 && (
+          <div className="flex items-center gap-1 text-gray-300">
+            <span className="inline-block w-1.5 h-3 bg-gray-300 animate-pulse rounded-sm" />
+          </div>
+        )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );

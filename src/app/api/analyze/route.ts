@@ -251,11 +251,6 @@ JSON structure:
           }
         });
 
-        // Stream text deltas to frontend in real time
-        msgStream.on('text', (text: string) => {
-          emit({ chunk: text });
-        });
-
         const message = await msgStream.finalMessage();
 
         const fullText = (message.content as Anthropic.ContentBlock[])
