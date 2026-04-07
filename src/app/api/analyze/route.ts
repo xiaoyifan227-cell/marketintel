@@ -1,10 +1,50 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { v4 as uuidv4 } from 'uuid';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// 内存限流：IP -> { count, date }
+// 注意：Vercel 无状态环境下每个实例独立，冷启动后重置，适合中低流量场景
+const rateLimitStore = new Map<string, { count: number; date: string }>();
+const DAILY_LIMIT = 5;
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    '127.0.0.1'
+  );
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const record = rateLimitStore.get(ip);
+
+  if (!record || record.date !== today) {
+    rateLimitStore.set(ip, { count: 1, date: today });
+    return { allowed: true, remaining: DAILY_LIMIT - 1 };
+  }
+
+  if (record.count >= DAILY_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  rateLimitStore.set(ip, { count: record.count + 1, date: today });
+  return { allowed: true, remaining: DAILY_LIMIT - record.count - 1 };
+}
+
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = checkRateLimit(ip);
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: '今日次数已达上限（每天最多 5 次），请明天再试。' },
+      { status: 429 }
+    );
+  }
+
   const { query, market, language } = await req.json();
 
   const isZh = language === 'zh';
@@ -45,8 +85,8 @@ JSON 结构：
   "competitors": [
     {
       "name": "公司名",
-      "valuation": "市值或融资额",
-      "revenue": "营收",
+      "valuation": "市值或融资额，格式：数据 (来源: 机构名, 年份)，如：$260亿 (来源: Bloomberg, 2024年)",
+      "revenue": "营收，格式：数据 (来源: 机构名或财报, 年份)，如：$31.4亿 (来源: 公司财报, FY2024)",
       "marketShare": 数字,
       "founded": 年份数字,
       "hq": "总部城市",
@@ -73,7 +113,10 @@ JSON 结构：
   "trends": [
     { "title": "趋势标题", "description": "详细说明", "impact": "high或medium或low" }
   ],
-  "strategy": "差异化策略建议（约150字）"
+  "strategy": "差异化策略建议（约150字）",
+  "sources": [
+    { "name": "来源网站名称", "url": "https://...", "desc": "用途说明，如：市场规模数据" }
+  ]
 }`
     : `[HIGHEST PRIORITY] You must strictly follow the target market restriction specified by the user. This is the highest priority requirement, overriding all other considerations.
 
@@ -94,8 +137,8 @@ JSON structure:
   "competitors": [
     {
       "name": "company name",
-      "valuation": "market cap or funding",
-      "revenue": "annual revenue",
+      "valuation": "market cap or funding with source, e.g. $260B (Source: Bloomberg, 2024)",
+      "revenue": "annual revenue with source, e.g. $31.4B (Source: Annual Report, FY2024)",
       "marketShare": number,
       "founded": year number,
       "hq": "headquarters city",
@@ -122,7 +165,10 @@ JSON structure:
   "trends": [
     { "title": "trend title", "description": "detail", "impact": "high or medium or low" }
   ],
-  "strategy": "differentiation strategy (~150 words)"
+  "strategy": "differentiation strategy (~150 words)",
+  "sources": [
+    { "name": "source website name", "url": "https://...", "desc": "what data it provided, e.g. market size figures" }
+  ]
 }`;
 
   function buildUserMessage(q: string, m: string, zh: boolean): string {

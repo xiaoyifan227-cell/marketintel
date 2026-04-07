@@ -21,6 +21,12 @@ interface Trend {
   impact: string;
 }
 
+interface Source {
+  name: string;
+  url: string;
+  desc: string;
+}
+
 interface Report {
   product: string;
   industry: string;
@@ -36,6 +42,7 @@ interface Report {
   marketShareData?: { labels: string[]; values: number[] };
   swot?: { strengths: string[]; weaknesses: string[]; opportunities: string[]; threats: string[] };
   trends?: Trend[];
+  sources?: Source[];
 }
 
 export default function ReportView({ report }: { report: unknown }) {
@@ -112,6 +119,14 @@ export default function ReportView({ report }: { report: unknown }) {
         </a>
         <h1 className="text-xl font-semibold text-gray-900 mb-1">{r.product} — {r.industry}</h1>
         <p className="text-xs text-gray-400">{t('report.generatedAt')}: {r.generatedAt} · {t('report.market')}: {r.market}</p>
+        <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+          <p className="text-xs text-amber-700 leading-relaxed">
+            {r.language === 'zh'
+              ? '本报告数据由 AI 联网搜索生成，建议核实关键数据后使用。'
+              : 'This report is AI-generated from web search results. Please verify key data before use.'}
+          </p>
+        </div>
       </div>
 
       {/* KPI cards */}
@@ -221,6 +236,37 @@ export default function ReportView({ report }: { report: unknown }) {
         <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">{t('report.sections.strategy')}</div>
         <p className="text-sm text-gray-700 leading-relaxed">{cleanText(r.strategy)}</p>
       </div>
+
+      {/* Sources */}
+      {(r.sources || []).length > 0 && (
+        <div className="mb-6">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
+            {r.language === 'zh' ? '数据来源' : 'Data Sources'}
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            {(r.sources || []).map((s, i) => (
+              <div key={i} className="flex items-start gap-3 text-xs">
+                <span className="text-gray-300 mt-0.5 flex-shrink-0">↗</span>
+                <div>
+                  {s.url?.startsWith('http') ? (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#1A5FA8] hover:underline font-medium"
+                    >
+                      {s.name}
+                    </a>
+                  ) : (
+                    <span className="text-gray-700 font-medium">{s.name}</span>
+                  )}
+                  {s.desc && <span className="text-gray-400 ml-1.5">— {s.desc}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Export */}
       <div className="export-bar flex gap-3 pt-4 border-t border-gray-100">

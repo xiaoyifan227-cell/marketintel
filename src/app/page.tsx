@@ -28,7 +28,11 @@ export default function Home() {
         body: JSON.stringify({ query, market, language: locale })
       });
 
-      if (!res.ok || !res.body) throw new Error(t('errors.apiError'));
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || t('errors.apiError'));
+      }
+      if (!res.body) throw new Error(t('errors.apiError'));
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
