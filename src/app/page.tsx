@@ -11,6 +11,7 @@ export default function Home() {
   const [market, setMarket] = useState('global');
   const [loading, setLoading] = useState(false);
   const [progressLines, setProgressLines] = useState<string[]>([]);
+  const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState('');
 
   const markets = ['global', 'china', 'northAmerica', 'sea'] as const;
@@ -20,6 +21,7 @@ export default function Home() {
     setError('');
     setLoading(true);
     setProgressLines([]);
+    setStreamingText('');
 
     try {
       const res = await fetch('/api/analyze', {
@@ -57,6 +59,10 @@ export default function Home() {
             setProgressLines(prev => [...prev, json.text as string]);
           }
 
+          if (json.chunk) {
+            setStreamingText(prev => prev + (json.chunk as string));
+          }
+
           if (json.done && json.report) {
             const report = json.report as Record<string, unknown>;
             localStorage.setItem(`report_${report.id}`, JSON.stringify(report));
@@ -75,7 +81,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-[#F7F7F5]">
         <Navbar />
-        <LoadingDisplay lines={progressLines} />
+        <LoadingDisplay lines={progressLines} streamingText={streamingText} />
       </div>
     );
   }
@@ -136,54 +142,72 @@ export default function Home() {
   );
 }
 
-function LoadingDisplay({ lines }: { lines: string[] }) {
+function LoadingDisplay({ lines, streamingText }: { lines: string[]; streamingText: string }) {
   const { t } = useLanguage();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const streamRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [lines]);
+    if (streamRef.current) {
+      streamRef.current.scrollTop = streamRef.current.scrollHeight;
+    }
+  }, [streamingText]);
 
-  const progress = Math.min(10 + lines.length * 22, 90);
+  const progress = Math.min(10 + lines.length * 20 + (streamingText.length > 0 ? 20 : 0), 95);
 
   return (
-    <div className="max-w-xl mx-auto px-4 pt-24">
-      <h2 className="text-lg font-medium text-gray-800 mb-2">{t('loading.title')}</h2>
-      <p className="text-xs text-gray-400 mb-5">{t('loading.found')}</p>
+    <div className="max-w-2xl mx-auto px-4 pt-16 pb-16">
+      <h2 className="text-lg font-medium text-gray-800 mb-1">{t('loading.title')}</h2>
+      <p className="text-xs text-gray-400 mb-4">{t('loading.found')}</p>
 
       {/* progress bar */}
-      <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-6">
+      <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-5">
         <div
           className="h-full bg-[#1A5FA8] rounded-full transition-all duration-700"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* live log */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 font-mono text-xs space-y-2 min-h-[140px]">
+      {/* status steps */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-5">
         {lines.length === 0 && (
-          <div className="text-gray-300 animate-pulse">initializing…</div>
+          <span className="text-xs text-gray-300 animate-pulse">initializing…</span>
         )}
         {lines.map((line, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-2 animate-fade-in"
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <span className={i === lines.length - 1 ? 'text-[#1A5FA8]' : 'text-green-500'}>
-              {i === lines.length - 1 ? '›' : '✓'}
+          <span key={i} className="flex items-center gap-1 text-xs">
+            <span className={i === lines.length - 1 && streamingText.length === 0 ? 'text-[#1A5FA8]' : 'text-green-500'}>
+              {i === lines.length - 1 && streamingText.length === 0 ? '›' : '✓'}
             </span>
-            <span className={i === lines.length - 1 ? 'text-gray-700' : 'text-gray-400'}>
+            <span className={i === lines.length - 1 && streamingText.length === 0 ? 'text-gray-700' : 'text-gray-400'}>
               {line}
             </span>
-          </div>
+          </span>
         ))}
-        {lines.length > 0 && (
-          <div className="flex items-center gap-1 text-gray-300">
-            <span className="inline-block w-1.5 h-3 bg-gray-300 animate-pulse rounded-sm" />
-          </div>
-        )}
-        <div ref={bottomRef} />
+      </div>
+
+      {/* streaming output */}
+      <div className="bg-[#1C1C1E] rounded-xl overflow-hidden">
+        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/10">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+          <span className="ml-2 text-xs text-white/30 font-mono">AI output</span>
+          {streamingText.length > 0 && (
+            <span className="ml-auto flex items-center gap-1 text-xs text-green-400/70">
+              <span className="inline-block w-1.5 h-3 bg-green-400 animate-pulse rounded-sm" />
+              streaming
+            </span>
+          )}
+        </div>
+        <pre
+          ref={streamRef}
+          className="p-4 font-mono text-xs text-green-300/90 leading-relaxed h-72 overflow-y-auto whitespace-pre-wrap break-words"
+        >
+          {streamingText.length === 0 ? (
+            <span className="text-white/20 animate-pulse">Waiting for model output…</span>
+          ) : (
+            streamingText
+          )}
+        </pre>
       </div>
     </div>
   );
