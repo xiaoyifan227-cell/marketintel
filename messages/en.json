@@ -6,6 +6,8 @@
     "placeholder": "e.g. I'm building a B2B SaaS CRM tool for small sales teams and want to understand the competitive landscape and market opportunities…\n\nOr just name an industry: EdTech, EV, Cross-border E-commerce…",
     "marketLabel": "Target Market",
     "markets": { "global": "Global", "china": "China", "northAmerica": "North America", "sea": "Southeast Asia" },
+    "styleLabel": "Report Style",
+    "styles": { "concise": "Concise", "detailed": "Detailed", "consulting": "Consulting" },
     "submitBtn": "Generate Report →",
     "features": {
       "competitors": { "title": "Competitor Matrix", "desc": "Comparison, market share, positioning analysis" },

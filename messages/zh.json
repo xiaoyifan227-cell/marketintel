@@ -6,6 +6,8 @@
     "placeholder": "例如：我在做一个 B2B SaaS CRM 工具，主要面向中小型销售团队，想了解竞品格局和市场机会…\n\n或者直接输入行业名称：在线教育、新能源汽车、跨境电商…",
     "marketLabel": "目标市场",
     "markets": { "global": "全球", "china": "中国", "northAmerica": "北美", "sea": "东南亚" },
+    "styleLabel": "报告风格",
+    "styles": { "concise": "简洁版", "detailed": "详细版", "consulting": "咨询版" },
     "submitBtn": "生成报告 →",
     "features": {
       "competitors": { "title": "竞品矩阵", "desc": "主要竞品对比、市场份额、定位分析" },

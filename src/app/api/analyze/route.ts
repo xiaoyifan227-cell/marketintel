@@ -45,9 +45,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { query, market, language } = await req.json();
+  const { query, market, style, language } = await req.json();
 
   const isZh = language === 'zh';
+
+  const styleInstruction = isZh
+    ? (style === 'detailed'
+        ? '【报告风格：详细版】执行摘要约200字，列出6-8家核心竞品（含定位、优劣势、增长率、威胁等级等完整维度），行业趋势5-6条（每条含深度解读），SWOT每项4-5条，差异化策略约300字。'
+        : style === 'consulting'
+        ? '【报告风格：咨询版】模仿麦肯锡/BCG风格，执行摘要约300字（正式商业语言，量化数据支撑），列出6-8家竞品，差异化策略约400字（结构化编号建议，每条含量化预期收益），行业趋势5-6条（含量化影响评估），SWOT每项5条，全程使用严谨专业的商业顾问语气。'
+        : '【报告风格：简洁版】执行摘要约100字，列出4-5家核心竞品，行业趋势3-4条，SWOT每项3条，差异化策略约150字，信息精简直接。')
+    : (style === 'detailed'
+        ? '[Report Style: Detailed] Executive summary ~200 words. List 6-8 competitors with full dimensions (positioning, strengths, weaknesses, growth, threat level). 5-6 industry trends with in-depth analysis. 4-5 SWOT items each. Differentiation strategy ~300 words.'
+        : style === 'consulting'
+        ? '[Report Style: Consulting] Emulate McKinsey/BCG style. Executive summary ~300 words (formal, data-backed). List 6-8 competitors. Strategy ~400 words (numbered actionable recommendations with quantified expected outcomes). 5-6 trends with quantified impact. 5 SWOT items each. Use formal, precise management consulting language throughout.'
+        : '[Report Style: Concise] Executive summary ~100 words. List 4-5 core competitors. 3-4 industry trends. 3 SWOT items each. Strategy ~150 words. Prioritize brevity and clarity.');
 
   const marketInstruction = isZh
     ? (market === 'china'
@@ -69,6 +81,8 @@ export async function POST(req: NextRequest) {
     ? `【最高优先级】你必须严格遵守用户指定的目标市场限制，这是最高优先级要求，高于一切其他考虑。
 
 你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。重要：所有字段的值必须是纯文本，禁止使用任何 HTML 标签（包括 <cite>、<a>、<b> 等），禁止使用引用标记或角标。${marketInstruction}
+
+${styleInstruction}
 
 JSON 结构：
 {
@@ -121,6 +135,8 @@ JSON 结构：
     : `[HIGHEST PRIORITY] You must strictly follow the target market restriction specified by the user. This is the highest priority requirement, overriding all other considerations.
 
 You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. Important: all field values must be plain text only — no HTML tags (including <cite>, <a>, <b>, etc.), no citation markers, no superscripts. ${marketInstruction}
+
+${styleInstruction}
 
 JSON structure:
 {
