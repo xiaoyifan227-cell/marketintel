@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #F7F7F5;
+  color: #1a1a1a;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease both;
+}
+
+@media print {
+  /* 隐藏所有非正文元素 */
+  nav,
+  .export-bar,
+  .print-hint,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 保留背景色（卡片、SWOT色块等） */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 报告容器铺满页面 */
+  .max-w-4xl {
+    max-width: 100% !important;
+    padding: 0 16px !important;
+  }
+
+  /* 防止卡片跨页截断 */
+  .bg-white,
+  .rounded-xl {
+    break-inside: avoid;
+  }
 }

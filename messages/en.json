@@ -1,0 +1,48 @@
+{
+  "nav": { "newReport": "New Report", "language": "中文" },
+  "home": {
+    "title": "Competitive & Market Intelligence",
+    "subtitle": "Describe your product or industry. AI searches the web and generates a full research report.",
+    "placeholder": "e.g. I'm building a B2B SaaS CRM tool for small sales teams and want to understand the competitive landscape and market opportunities…\n\nOr just name an industry: EdTech, EV, Cross-border E-commerce…",
+    "marketLabel": "Target Market",
+    "markets": { "global": "Global", "china": "China", "northAmerica": "North America", "sea": "Southeast Asia" },
+    "submitBtn": "Generate Report →",
+    "features": {
+      "competitors": { "title": "Competitor Matrix", "desc": "Comparison, market share, positioning analysis" },
+      "market": { "title": "Market Data", "desc": "Size, growth rate, trend charts" },
+      "swot": { "title": "SWOT + Strategy", "desc": "Opportunities, threats, differentiation" }
+    }
+  },
+  "loading": {
+    "title": "Generating your report…",
+    "steps": ["Understanding query", "Searching competitors", "Aggregating data", "Building report"],
+    "found": "Found"
+  },
+  "report": {
+    "generatedAt": "Generated",
+    "market": "Market",
+    "metrics": {
+      "marketSize": "Market Size",
+      "competitors": "Competitors Found",
+      "concentration": "Concentration",
+      "projected": "Projected Size (2028)"
+    },
+    "sections": {
+      "competitors": "Key Competitors",
+      "marketShare": "Market Share",
+      "trends": "Industry Trends",
+      "swot": "SWOT Analysis",
+      "summary": "Executive Summary",
+      "strategy": "Differentiation Strategy"
+    },
+    "threat": { "high": "High Threat", "medium": "Mid Threat", "low": "Low Threat" },
+    "swotLabels": { "strengths": "Strengths", "weaknesses": "Weaknesses", "opportunities": "Opportunities", "threats": "Threats" },
+    "impact": { "high": "High Impact", "medium": "Mid Impact", "low": "Low Impact" },
+    "export": { "pdf": "Download PDF", "word": "Download Word", "markdown": "Copy Markdown" },
+    "competitorFields": {
+      "valuation": "Valuation", "revenue": "Revenue", "share": "Market Share",
+      "strength": "Strength", "growth": "Growth"
+    }
+  },
+  "errors": { "apiError": "Generation failed. Please try again.", "emptyInput": "Please describe your product or industry." }
+}

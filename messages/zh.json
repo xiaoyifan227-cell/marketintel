@@ -1,0 +1,48 @@
+{
+  "nav": { "newReport": "新建报告", "language": "EN" },
+  "home": {
+    "title": "竞品 & 行业深度调研",
+    "subtitle": "描述你的产品或行业，AI 联网搜索，生成完整分析报告",
+    "placeholder": "例如：我在做一个 B2B SaaS CRM 工具，主要面向中小型销售团队，想了解竞品格局和市场机会…\n\n或者直接输入行业名称：在线教育、新能源汽车、跨境电商…",
+    "marketLabel": "目标市场",
+    "markets": { "global": "全球", "china": "中国", "northAmerica": "北美", "sea": "东南亚" },
+    "submitBtn": "生成报告 →",
+    "features": {
+      "competitors": { "title": "竞品矩阵", "desc": "主要竞品对比、市场份额、定位分析" },
+      "market": { "title": "市场数据", "desc": "规模、增速、趋势图表" },
+      "swot": { "title": "SWOT + 建议", "desc": "机会、威胁、差异化策略" }
+    }
+  },
+  "loading": {
+    "title": "正在生成报告…",
+    "steps": ["理解分析需求", "联网搜索竞品", "整合市场数据", "生成报告"],
+    "found": "已找到"
+  },
+  "report": {
+    "generatedAt": "生成时间",
+    "market": "市场",
+    "metrics": {
+      "marketSize": "市场规模",
+      "competitors": "识别竞品",
+      "concentration": "市场集中度",
+      "projected": "预测规模 (2028)"
+    },
+    "sections": {
+      "competitors": "主要竞品",
+      "marketShare": "市场份额",
+      "trends": "行业趋势",
+      "swot": "SWOT 分析（针对新进入者）",
+      "summary": "执行摘要",
+      "strategy": "差异化策略建议"
+    },
+    "threat": { "high": "高威胁", "medium": "中威胁", "low": "低威胁" },
+    "swotLabels": { "strengths": "优势", "weaknesses": "劣势", "opportunities": "机会", "threats": "威胁" },
+    "impact": { "high": "影响高", "medium": "影响中", "low": "影响低" },
+    "export": { "pdf": "下载 PDF", "word": "下载 Word", "markdown": "复制 Markdown" },
+    "competitorFields": {
+      "valuation": "市值/融资", "revenue": "营收", "share": "市场份额",
+      "strength": "核心优势", "growth": "增长"
+    }
+  },
+  "errors": { "apiError": "生成失败，请重试", "emptyInput": "请描述你的产品或行业" }
+}
