@@ -221,7 +221,7 @@ JSON structure:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const msgStream = (client.messages as any).stream({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 2500,
+          max_tokens: 4000,
           system: systemPrompt,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{ role: 'user', content: buildUserMessage(query, market, isZh) }]

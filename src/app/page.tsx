@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -160,72 +160,66 @@ export default function Home() {
   );
 }
 
+// Infer a friendly progress step from the accumulated JSON text
+function inferStep(text: string, isZh: boolean): string {
+  if (text.includes('"sources"'))      return isZh ? '即将完成，整理数据来源…' : 'Almost done, compiling sources…';
+  if (text.includes('"strategy"'))     return isZh ? '正在撰写差异化策略建议…' : 'Writing differentiation strategy…';
+  if (text.includes('"trends"'))       return isZh ? '正在分析行业趋势…' : 'Analysing industry trends…';
+  if (text.includes('"swot"'))         return isZh ? '正在生成 SWOT 分析…' : 'Generating SWOT analysis…';
+  if (text.includes('"revenueHistory"')) return isZh ? '正在整理营收历史数据…' : 'Compiling revenue history…';
+  if (text.includes('"marketShareData"')) return isZh ? '正在计算市场份额分布…' : 'Calculating market share…';
+  if (text.includes('"competitors"'))  return isZh ? '正在分析各竞品详情…' : 'Analysing competitor details…';
+  if (text.includes('"marketSize"'))   return isZh ? '正在获取市场规模数据…' : 'Fetching market size data…';
+  if (text.includes('"summary"'))      return isZh ? '正在撰写执行摘要…' : 'Writing executive summary…';
+  if (text.includes('"product"'))      return isZh ? '正在整理报告结构…' : 'Structuring the report…';
+  return isZh ? '正在生成报告内容…' : 'Generating report content…';
+}
+
 function LoadingDisplay({ lines, streamingText }: { lines: string[]; streamingText: string }) {
-  const { t } = useLanguage();
-  const streamRef = useRef<HTMLPreElement>(null);
+  const { t, locale } = useLanguage();
+  const isZh = locale === 'zh';
 
-  useEffect(() => {
-    if (streamRef.current) {
-      streamRef.current.scrollTop = streamRef.current.scrollHeight;
-    }
-  }, [streamingText]);
+  // Build the full list of steps shown to the user
+  const streamStep = streamingText.length > 0 ? inferStep(streamingText, isZh) : null;
+  const allSteps = streamStep ? [...lines, streamStep] : lines;
 
-  const progress = Math.min(10 + lines.length * 20 + (streamingText.length > 0 ? 20 : 0), 95);
+  const progress = Math.min(10 + lines.length * 18 + (streamingText.length > 0 ? Math.min(streamingText.length / 60, 32) : 0), 95);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-16 pb-16">
+    <div className="max-w-xl mx-auto px-4 pt-20 pb-16">
       <h2 className="text-lg font-medium text-gray-800 mb-1">{t('loading.title')}</h2>
-      <p className="text-xs text-gray-400 mb-4">{t('loading.found')}</p>
+      <p className="text-xs text-gray-400 mb-5">{t('loading.found')}</p>
 
       {/* progress bar */}
-      <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-5">
+      <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-6">
         <div
-          className="h-full bg-[#1A5FA8] rounded-full transition-all duration-700"
+          className="h-full bg-[#1A5FA8] rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* status steps */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-5">
-        {lines.length === 0 && (
-          <span className="text-xs text-gray-300 animate-pulse">initializing…</span>
+      {/* step log */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2.5 min-h-[160px]">
+        {allSteps.length === 0 && (
+          <div className="text-xs text-gray-300 animate-pulse">initializing…</div>
         )}
-        {lines.map((line, i) => (
-          <span key={i} className="flex items-center gap-1 text-xs">
-            <span className={i === lines.length - 1 && streamingText.length === 0 ? 'text-[#1A5FA8]' : 'text-green-500'}>
-              {i === lines.length - 1 && streamingText.length === 0 ? '›' : '✓'}
-            </span>
-            <span className={i === lines.length - 1 && streamingText.length === 0 ? 'text-gray-700' : 'text-gray-400'}>
-              {line}
-            </span>
-          </span>
-        ))}
-      </div>
-
-      {/* streaming output */}
-      <div className="bg-[#1C1C1E] rounded-xl overflow-hidden">
-        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/10">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-          <span className="ml-2 text-xs text-white/30 font-mono">AI output</span>
-          {streamingText.length > 0 && (
-            <span className="ml-auto flex items-center gap-1 text-xs text-green-400/70">
-              <span className="inline-block w-1.5 h-3 bg-green-400 animate-pulse rounded-sm" />
-              streaming
-            </span>
-          )}
-        </div>
-        <pre
-          ref={streamRef}
-          className="p-4 font-mono text-xs text-green-300/90 leading-relaxed h-72 overflow-y-auto whitespace-pre-wrap break-words"
-        >
-          {streamingText.length === 0 ? (
-            <span className="text-white/20 animate-pulse">Waiting for model output…</span>
-          ) : (
-            streamingText
-          )}
-        </pre>
+        {allSteps.map((line, i) => {
+          const isLast = i === allSteps.length - 1;
+          const isStreaming = isLast && streamingText.length > 0;
+          return (
+            <div key={i} className="flex items-start gap-2">
+              <span className={`mt-px text-xs ${isLast ? 'text-[#1A5FA8]' : 'text-green-500'}`}>
+                {isLast ? '›' : '✓'}
+              </span>
+              <span className={`text-xs leading-relaxed ${isLast ? 'text-gray-800' : 'text-gray-400'}`}>
+                {line}
+              </span>
+              {isStreaming && (
+                <span className="inline-block w-1.5 h-3.5 bg-[#1A5FA8] animate-pulse rounded-sm ml-0.5 mt-px" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
