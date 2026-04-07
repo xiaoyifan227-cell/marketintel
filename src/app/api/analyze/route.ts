@@ -49,17 +49,60 @@ export async function POST(req: NextRequest) {
 
   const isZh = language === 'zh';
 
-  const styleInstruction = isZh
+  // styleOverride is appended AFTER the JSON template so it explicitly overrides the example counts
+  const styleOverride = isZh
     ? (style === 'detailed'
-        ? '【报告风格：详细版】执行摘要约200字，列出6-8家核心竞品（含定位、优劣势、增长率、威胁等级等完整维度），行业趋势5-6条（每条含深度解读），SWOT每项4-5条，差异化策略约300字。'
+        ? `
+【风格强制约束：详细版 — 必须严格遵守，优先级高于上方示例数量】
+· competitors 数组：必须恰好包含 6-8 家竞品
+· summary 字段：必须约 200 字，详细描述市场背景与竞争格局
+· trends 数组：必须恰好包含 5 条，每条 description 不少于 60 字
+· swot 四个子数组各自必须恰好包含 4 条
+· strategy 字段：必须约 300 字，含具体建议
+· 每个竞品的 strength、weakness、positioning 字段均须详细填写（不少于 30 字）`
         : style === 'consulting'
-        ? '【报告风格：咨询版】模仿麦肯锡/BCG风格，执行摘要约300字（正式商业语言，量化数据支撑），列出6-8家竞品，差异化策略约400字（结构化编号建议，每条含量化预期收益），行业趋势5-6条（含量化影响评估），SWOT每项5条，全程使用严谨专业的商业顾问语气。'
-        : '【报告风格：简洁版】执行摘要约100字，列出4-5家核心竞品，行业趋势3-4条，SWOT每项3条，差异化策略约150字，信息精简直接。')
+        ? `
+【风格强制约束：咨询版 — 必须严格遵守，优先级高于上方示例数量】
+· competitors 数组：必须恰好包含 6-8 家竞品
+· summary 字段：必须约 300 字，使用正式商业语言，以量化数据支撑每个论点
+· trends 数组：必须恰好包含 5 条，每条 description 必须含量化影响评估（如"预计提升市占率 X%"）
+· swot 四个子数组各自必须恰好包含 5 条
+· strategy 字段：必须约 400 字，用序号列出具体可执行建议，每条建议须包含预期收益或量化指标
+· 全文使用麦肯锡/BCG风格的严谨专业商业顾问语气，避免口语化表达`
+        : `
+【风格强制约束：简洁版 — 必须严格遵守，优先级高于上方示例数量】
+· competitors 数组：必须恰好包含 4 家竞品，不多不少
+· summary 字段：必须严格控制在 50 字以内
+· trends 数组：必须恰好包含 3 条
+· swot 四个子数组各自必须恰好包含 2 条
+· strategy 字段：约 150 字，精简直接
+· 每个竞品的 strength、weakness 字段：一句话简短描述即可`)
     : (style === 'detailed'
-        ? '[Report Style: Detailed] Executive summary ~200 words. List 6-8 competitors with full dimensions (positioning, strengths, weaknesses, growth, threat level). 5-6 industry trends with in-depth analysis. 4-5 SWOT items each. Differentiation strategy ~300 words.'
+        ? `
+[STYLE ENFORCEMENT: Detailed — MANDATORY, overrides example counts above]
+· competitors array: must contain exactly 6-8 entries
+· summary field: must be ~200 words, covering market background and competitive dynamics
+· trends array: must contain exactly 5 items; each description must be 60+ words
+· each swot sub-array must contain exactly 4 items
+· strategy field: must be ~300 words with specific recommendations
+· Each competitor's strength, weakness, positioning fields must be detailed (30+ words each)`
         : style === 'consulting'
-        ? '[Report Style: Consulting] Emulate McKinsey/BCG style. Executive summary ~300 words (formal, data-backed). List 6-8 competitors. Strategy ~400 words (numbered actionable recommendations with quantified expected outcomes). 5-6 trends with quantified impact. 5 SWOT items each. Use formal, precise management consulting language throughout.'
-        : '[Report Style: Concise] Executive summary ~100 words. List 4-5 core competitors. 3-4 industry trends. 3 SWOT items each. Strategy ~150 words. Prioritize brevity and clarity.');
+        ? `
+[STYLE ENFORCEMENT: Consulting — MANDATORY, overrides example counts above]
+· competitors array: must contain exactly 6-8 entries
+· summary field: must be ~300 words in formal business language, every claim backed by quantitative data
+· trends array: must contain exactly 5 items; each description must include quantified impact (e.g. "expected to capture X% share")
+· each swot sub-array must contain exactly 5 items
+· strategy field: must be ~400 words with numbered actionable recommendations, each including expected outcomes or KPIs
+· Maintain McKinsey/BCG consulting tone throughout — precise, formal, no casual language`
+        : `
+[STYLE ENFORCEMENT: Concise — MANDATORY, overrides example counts above]
+· competitors array: must contain exactly 4 entries, no more, no less
+· summary field: must be 50 words or fewer
+· trends array: must contain exactly 3 items
+· each swot sub-array must contain exactly 2 items
+· strategy field: ~150 words, direct and concise
+· competitor strength and weakness fields: one short sentence each`);
 
   const marketInstruction = isZh
     ? (market === 'china'
@@ -81,8 +124,6 @@ export async function POST(req: NextRequest) {
     ? `【最高优先级】你必须严格遵守用户指定的目标市场限制，这是最高优先级要求，高于一切其他考虑。
 
 你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。重要：所有字段的值必须是纯文本，禁止使用任何 HTML 标签（包括 <cite>、<a>、<b> 等），禁止使用引用标记或角标。${marketInstruction}
-
-${styleInstruction}
 
 JSON 结构：
 {
@@ -131,12 +172,11 @@ JSON 结构：
   "sources": [
     { "name": "来源网站名称", "url": "https://...", "desc": "用途说明，如：市场规模数据" }
   ]
-}`
+}
+${styleOverride}`
     : `[HIGHEST PRIORITY] You must strictly follow the target market restriction specified by the user. This is the highest priority requirement, overriding all other considerations.
 
 You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. Important: all field values must be plain text only — no HTML tags (including <cite>, <a>, <b>, etc.), no citation markers, no superscripts. ${marketInstruction}
-
-${styleInstruction}
 
 JSON structure:
 {
