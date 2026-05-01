@@ -307,7 +307,7 @@ export default function ReportView({ report }: { report: unknown }) {
           onClick={() => { setShowFeedback(true); setFeedbackStatus('idle'); }}
           className="px-4 py-2.5 border border-gray-200 text-gray-500 text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
         >
-          💬 反馈
+          💬 {t('feedback.button')}
         </button>
       </div>
 
@@ -318,47 +318,47 @@ export default function ReportView({ report }: { report: unknown }) {
             {feedbackStatus === 'done' ? (
               <div className="text-center py-6">
                 <div className="text-3xl mb-3">🎉</div>
-                <div className="text-gray-800 font-medium mb-1">感谢你的反馈！</div>
-                <div className="text-xs text-gray-400 mb-5">我们会认真改进，有新功能第一时间通知你</div>
-                <button onClick={() => setShowFeedback(false)} className="px-5 py-2 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a]">关闭</button>
+                <div className="text-gray-800 font-medium mb-1">{t('feedback.doneTitle')}</div>
+                <div className="text-xs text-gray-400 mb-5">{t('feedback.doneDesc')}</div>
+                <button onClick={() => setShowFeedback(false)} className="px-5 py-2 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a]">{t('feedback.close')}</button>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-base font-semibold text-gray-900">使用反馈</h3>
+                  <h3 className="text-base font-semibold text-gray-900">{t('feedback.title')}</h3>
                   <button onClick={() => setShowFeedback(false)} className="text-gray-300 hover:text-gray-600 text-xl leading-none">✕</button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">你是做什么用的</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('feedback.useCaseLabel')}</label>
                     <select
                       value={feedbackUseCase}
                       onChange={e => setFeedbackUseCase(e.target.value)}
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#1A5FA8]/30 focus:border-[#1A5FA8]"
                     >
-                      <option value="">请选择…</option>
-                      <option value="找工作行业调研">找工作行业调研</option>
-                      <option value="创业竞品分析">创业竞品分析</option>
-                      <option value="上课写报告">上课写报告</option>
-                      <option value="工作汇报">工作汇报</option>
-                      <option value="其他">其他</option>
+                      <option value="">{t('feedback.useCasePlaceholder')}</option>
+                      <option value="job">{t('feedback.useCases.job')}</option>
+                      <option value="startup">{t('feedback.useCases.startup')}</option>
+                      <option value="school">{t('feedback.useCases.school')}</option>
+                      <option value="work">{t('feedback.useCases.work')}</option>
+                      <option value="other">{t('feedback.useCases.other')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">你最希望改进什么 <span className="text-gray-300 font-normal">（可选）</span></label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('feedback.improveLabel')} <span className="text-gray-300 font-normal">{t('feedback.improveOptional')}</span></label>
                     <textarea
                       value={feedbackImprove}
                       onChange={e => setFeedbackImprove(e.target.value)}
-                      placeholder="比如：数据更新更及时、支持更多行业…"
+                      placeholder={t('feedback.improvePlaceholder')}
                       rows={3}
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#1A5FA8]/30 focus:border-[#1A5FA8]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">留下邮箱，有新功能第一时间通知你 <span className="text-gray-300 font-normal">（可选）</span></label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('feedback.emailLabel')} <span className="text-gray-300 font-normal">{t('feedback.emailOptional')}</span></label>
                     <input
                       type="email"
                       value={feedbackEmail}
@@ -370,7 +370,7 @@ export default function ReportView({ report }: { report: unknown }) {
                 </div>
 
                 {feedbackStatus === 'error' && (
-                  <p className="text-xs text-red-500 mt-3">提交失败，请稍后重试</p>
+                  <p className="text-xs text-red-500 mt-3">{t('feedback.error')}</p>
                 )}
 
                 <button
@@ -378,7 +378,7 @@ export default function ReportView({ report }: { report: unknown }) {
                   disabled={feedbackStatus === 'submitting' || !feedbackUseCase}
                   className="mt-5 w-full py-2.5 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {feedbackStatus === 'submitting' ? '提交中…' : '提交反馈'}
+                  {feedbackStatus === 'submitting' ? t('feedback.submitting') : t('feedback.submit')}
                 </button>
               </>
             )}

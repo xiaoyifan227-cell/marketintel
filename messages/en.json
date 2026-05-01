@@ -46,5 +46,29 @@
       "strength": "Strength", "growth": "Growth"
     }
   },
-  "errors": { "apiError": "Generation failed. Please try again.", "emptyInput": "Please describe your product or industry." }
+  "errors": { "apiError": "Generation failed. Please try again.", "emptyInput": "Please describe your product or industry." },
+  "feedback": {
+    "button": "Feedback",
+    "title": "Share Feedback",
+    "useCaseLabel": "How are you using this?",
+    "useCasePlaceholder": "Select one…",
+    "useCases": {
+      "job": "Job market research",
+      "startup": "Startup competitor analysis",
+      "school": "School / coursework",
+      "work": "Work presentation",
+      "other": "Other"
+    },
+    "improveLabel": "What would you most like improved?",
+    "improveOptional": "(optional)",
+    "improvePlaceholder": "e.g. more up-to-date data, more industries supported…",
+    "emailLabel": "Leave your email to get notified about new features",
+    "emailOptional": "(optional)",
+    "submit": "Submit Feedback",
+    "submitting": "Submitting…",
+    "error": "Submission failed. Please try again later.",
+    "doneTitle": "Thanks for your feedback!",
+    "doneDesc": "We'll keep improving — you'll be the first to know about new features.",
+    "close": "Close"
+  }
 }

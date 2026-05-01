@@ -46,5 +46,29 @@
       "strength": "核心优势", "growth": "增长"
     }
   },
-  "errors": { "apiError": "生成失败，请重试", "emptyInput": "请描述你的产品或行业" }
+  "errors": { "apiError": "生成失败，请重试", "emptyInput": "请描述你的产品或行业" },
+  "feedback": {
+    "button": "反馈",
+    "title": "使用反馈",
+    "useCaseLabel": "你是做什么用的",
+    "useCasePlaceholder": "请选择…",
+    "useCases": {
+      "job": "找工作行业调研",
+      "startup": "创业竞品分析",
+      "school": "上课写报告",
+      "work": "工作汇报",
+      "other": "其他"
+    },
+    "improveLabel": "你最希望改进什么",
+    "improveOptional": "（可选）",
+    "improvePlaceholder": "比如：数据更新更及时、支持更多行业…",
+    "emailLabel": "留下邮箱，有新功能第一时间通知你",
+    "emailOptional": "（可选）",
+    "submit": "提交反馈",
+    "submitting": "提交中…",
+    "error": "提交失败，请稍后重试",
+    "doneTitle": "感谢你的反馈！",
+    "doneDesc": "我们会认真改进，有新功能第一时间通知你",
+    "close": "关闭"
+  }
 }
