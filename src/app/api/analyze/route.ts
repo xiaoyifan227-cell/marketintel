@@ -7,7 +7,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // 内存限流：IP -> { count, date }
 // 注意：Vercel 无状态环境下每个实例独立，冷启动后重置，适合中低流量场景
 const rateLimitStore = new Map<string, { count: number; date: string }>();
-const DAILY_LIMIT = 5;
+const DAILY_LIMIT = 20;
 
 function getClientIp(req: NextRequest): string {
   return (
