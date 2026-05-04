@@ -49,28 +49,20 @@ export async function POST(req: NextRequest) {
 
   const isZh = language === 'zh';
 
-  const styleOverride = isZh
-    ? `
-【风格强制约束：详细版 — 必须严格遵守，优先级高于上方示例数量】
-· competitors 数组：必须恰好包含 6-8 家竞品
-· summary 字段：必须约 200 字，详细描述市场背景与竞争格局
-· trends 数组：必须恰好包含 5 条，每条 description 不少于 60 字
-· swot 四个子数组各自必须恰好包含 4 条
-· strategy 字段：必须约 300 字，含具体建议
-· 每个竞品的 strength、weakness、positioning 字段均须详细填写（不少于 30 字）`
-    : `
-[STYLE ENFORCEMENT: Detailed — MANDATORY, overrides example counts above]
-· competitors array: must contain exactly 6-8 entries
-· summary field: must be ~200 words, covering market background and competitive dynamics
-· trends array: must contain exactly 5 items; each description must be 60+ words
-· each swot sub-array must contain exactly 4 items
-· strategy field: must be ~300 words with specific recommendations
-· Each competitor's strength, weakness, positioning fields must be detailed (30+ words each)`;
-
   const systemPrompt = isZh
-    ? `Return ONLY valid complete JSON. No HTML tags, no cite tags. Keep all text fields concise.
+    ? `Return ONLY valid complete JSON. No HTML tags, no cite tags, no Markdown code blocks. Output the raw JSON object directly.
 
-你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。【JSON完整性最高优先级】你的回复必须是完整的JSON，宁可每个字段内容短一点，也要保证JSON结构完整不被截断。【严格字段长度限制，违反将导致输出失败】competitors 最多5个；summary 严格不超过60字；strategy 严格不超过80字；trends 每条 description 严格不超过25字；每个竞品的 strength、weakness 严格不超过15字；positioning 不超过20字。整个 JSON 必须在 4000 tokens 内完整输出。【绝对禁止】所有字段的值必须是纯文本字符串，严禁在任何字段中使用任何 HTML 标签，包括但不限于 <cite>、</cite>、<a>、<b>、<span> 等，严禁使用引用标记、上下标或任何标记语言语法。违反此规则会导致整个报告无法显示。
+你是专业行业分析师。用 web_search 搜索不超过 2 次获取关键数据，其余用已有知识补充，30 秒内返回结果。
+
+【输出约束 — 最高优先级，必须严格遵守】
+· 回复必须是完整的 JSON 对象，不得截断
+· competitors：最多 5 个
+· summary：最多 80 字
+· strategy：最多 100 字
+· trends：最多 4 条，每条 description 不超过 30 字
+· swot 每个子数组：最多 3 条
+· 每个竞品的 strength、weakness：不超过 20 字；positioning：不超过 25 字
+· 所有字段值必须是纯文本，严禁 HTML 标签（<cite>、<a>、<b>、<span> 等）
 
 JSON 结构：
 {
@@ -79,7 +71,7 @@ JSON 结构：
   "market": "目标市场",
   "language": "zh",
   "generatedAt": "当前日期",
-  "summary": "执行摘要（严格不超过60字）",
+  "summary": "执行摘要（最多80字）",
   "marketSize": "市场规模如$XXX亿",
   "marketGrowth": "增长率如18%",
   "marketSizeProjected": "2028年预测规模",
@@ -87,18 +79,18 @@ JSON 结构：
   "competitors": [
     {
       "name": "公司名",
-      "valuation": "市值或融资额，格式：数据 (来源: 机构名, 年份)，如：$260亿 (来源: Bloomberg, 2024年)",
-      "revenue": "营收，格式：数据 (来源: 机构名或财报, 年份)，如：$31.4亿 (来源: 公司财报, FY2024)",
+      "valuation": "市值或融资额，如：$260亿 (Bloomberg, 2024)",
+      "revenue": "营收，如：$31.4亿 (公司财报, FY2024)",
       "marketShare": 数字,
       "founded": 年份数字,
       "hq": "总部城市",
-      "positioning": "定位描述（不超过20字）",
-      "strength": "核心优势（严格不超过15字）",
-      "weakness": "主要弱点（严格不超过15字）",
+      "positioning": "定位描述（最多25字）",
+      "strength": "核心优势（最多20字）",
+      "weakness": "主要弱点（最多20字）",
       "growth": "+XX% YoY",
       "threat": "high或medium或low",
       "isTop": true或false,
-      "website": "只填你100%确定的官网URL，例如汤臣倍健填 https://www.by-health.com，Salesforce填 https://www.salesforce.com。只要有一丝不确定就填空字符串\"\"，宁可不显示也不填错误链接"
+      "website": "100%确定的官网URL，不确定填\"\""
     }
   ],
   "marketShareData": { "labels": ["公司名数组"], "values": [数字数组总和100] },
@@ -113,17 +105,26 @@ JSON 结构：
     "threats": ["威胁1","威胁2","威胁3"]
   },
   "trends": [
-    { "title": "趋势标题", "description": "说明（严格不超过25字）", "impact": "high或medium或low" }
+    { "title": "趋势标题", "description": "说明（最多30字）", "impact": "high或medium或low" }
   ],
-  "strategy": "差异化策略建议（严格不超过80字）",
+  "strategy": "差异化策略建议（最多100字）",
   "sources": [
-    { "name": "来源网站名称", "url": "https://...", "desc": "用途说明，如：市场规模数据" }
+    { "name": "来源网站名称", "url": "https://...", "desc": "用途说明" }
   ]
-}
-${styleOverride}`
-    : `Return ONLY valid complete JSON. No HTML tags, no cite tags. Keep all text fields concise.
+}`
+    : `Return ONLY valid complete JSON. No HTML tags, no cite tags, no Markdown code blocks. Output the raw JSON object directly.
 
-You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. [JSON COMPLETENESS — HIGHEST PRIORITY] Your response must be a complete, valid JSON object. Keep individual field content shorter if needed, but never truncate the JSON structure. [STRICT FIELD LENGTH LIMITS — violations will cause output failure] Max 5 competitors; summary: max 60 words; strategy: max 80 words; each trend description: max 25 words; each competitor's strength and weakness: max 15 words; positioning: max 20 words. The entire JSON must fit within 4000 tokens. [ABSOLUTE RULE] Every field value must be plain text only — never use any HTML tags in any field, including <cite>, </cite>, <a>, <b>, <span>, or any other tag. Never use citation markers, superscripts, or any markup syntax. Violations will cause the entire report to fail to render.
+You are a professional market analyst. Use web_search at most 2 times to get key data, fill the rest from existing knowledge, return within 30 seconds.
+
+[OUTPUT CONSTRAINTS — HIGHEST PRIORITY, STRICTLY ENFORCED]
+· Response must be a complete JSON object — never truncate
+· competitors: max 5 entries
+· summary: max 80 words
+· strategy: max 100 words
+· trends: max 4 items, each description max 30 words
+· each swot sub-array: max 3 items
+· competitor strength/weakness: max 20 words each; positioning: max 25 words
+· All field values must be plain text — no HTML tags (<cite>, <a>, <b>, <span>, etc.)
 
 JSON structure:
 {
@@ -132,7 +133,7 @@ JSON structure:
   "market": "target market",
   "language": "en",
   "generatedAt": "current date",
-  "summary": "executive summary (max 60 words)",
+  "summary": "executive summary (max 80 words)",
   "marketSize": "e.g. $89.8B",
   "marketGrowth": "e.g. 12.6%",
   "marketSizeProjected": "projected 2028 size",
@@ -140,18 +141,18 @@ JSON structure:
   "competitors": [
     {
       "name": "company name",
-      "valuation": "market cap or funding with source, e.g. $260B (Source: Bloomberg, 2024)",
-      "revenue": "annual revenue with source, e.g. $31.4B (Source: Annual Report, FY2024)",
+      "valuation": "e.g. $260B (Bloomberg, 2024)",
+      "revenue": "e.g. $31.4B (Annual Report, FY2024)",
       "marketShare": number,
       "founded": year number,
       "hq": "headquarters city",
-      "positioning": "positioning description (max 20 words)",
-      "strength": "core strength (max 15 words)",
-      "weakness": "main weakness (max 15 words)",
+      "positioning": "positioning description (max 25 words)",
+      "strength": "core strength (max 20 words)",
+      "weakness": "main weakness (max 20 words)",
       "growth": "+XX% YoY",
       "threat": "high or medium or low",
       "isTop": true or false,
-      "website": "only fill in the URL you are 100% certain about, e.g. Salesforce → https://www.salesforce.com, HubSpot → https://www.hubspot.com. If there is any doubt at all, use empty string \"\". Never guess."
+      "website": "URL you are 100% certain about, else \"\""
     }
   ],
   "marketShareData": { "labels": ["company names"], "values": [numbers summing to 100] },
@@ -166,11 +167,11 @@ JSON structure:
     "threats": ["threat 1","threat 2","threat 3"]
   },
   "trends": [
-    { "title": "trend title", "description": "detail (max 25 words)", "impact": "high or medium or low" }
+    { "title": "trend title", "description": "detail (max 30 words)", "impact": "high or medium or low" }
   ],
-  "strategy": "differentiation strategy (max 80 words)",
+  "strategy": "differentiation strategy (max 100 words)",
   "sources": [
-    { "name": "source website name", "url": "https://...", "desc": "what data it provided, e.g. market size figures" }
+    { "name": "source name", "url": "https://...", "desc": "what data it provided" }
   ]
 }`;
 
@@ -228,12 +229,18 @@ JSON structure:
 
         const message = await msgStream.finalMessage();
 
+        console.log('[analyze] stop_reason:', message.stop_reason);
+
+        if (message.stop_reason === 'max_tokens') {
+          emit({ error: isZh ? '内容过长，请尝试更具体的描述' : 'Response too long — please try a more specific query.' });
+          return;
+        }
+
         const fullText = (message.content as Anthropic.ContentBlock[])
           .filter((b): b is Anthropic.TextBlock => b.type === 'text')
           .map(b => b.text)
           .join('');
 
-        console.log('[analyze] stop_reason:', message.stop_reason);
         console.log('[analyze] fullText length:', fullText.length);
         console.log('[analyze] fullText (first 2000 chars):', fullText.slice(0, 2000));
         console.log('[analyze] fullText (last 500 chars):', fullText.slice(-500));
