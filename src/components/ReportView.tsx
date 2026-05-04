@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { jsPDF as JsPDFType } from 'jspdf';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Competitor {
@@ -50,7 +49,6 @@ export default function ReportView({ report }: { report: unknown }) {
   const { t } = useLanguage();
   const r = report as Report;
   const reportRef = useRef<HTMLDivElement>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackUseCase, setFeedbackUseCase] = useState('');
   const [feedbackImprove, setFeedbackImprove] = useState('');
@@ -73,53 +71,6 @@ export default function ReportView({ report }: { report: unknown }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'report.docx'; a.click();
     URL.revokeObjectURL(url);
-  }
-
-  async function downloadPDF() {
-    if (!reportRef.current || pdfLoading) return;
-    setPdfLoading(true);
-
-    // Temporarily hide UI-only elements that shouldn't appear in the PDF
-    const hidden: HTMLElement[] = [];
-    reportRef.current.querySelectorAll<HTMLElement>('.export-bar, .print-hint').forEach(el => {
-      hidden.push(el);
-      el.style.display = 'none';
-    });
-
-    try {
-      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
-        import('jspdf'),
-        import('html2canvas'),
-      ]);
-
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
-
-      // A4 dimensions in mm
-      const pageW = 210;
-      const pageH = 297;
-      const imgH = (canvas.height * pageW) / canvas.width;
-
-      const pdf: JsPDFType = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-      let y = 0;
-      while (y < imgH) {
-        if (y > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, -y, pageW, imgH);
-        y += pageH;
-      }
-
-      pdf.save(`${r.product}.pdf`);
-    } finally {
-      hidden.forEach(el => { el.style.display = ''; });
-      setPdfLoading(false);
-    }
   }
 
   async function submitFeedback() {
@@ -321,13 +272,13 @@ export default function ReportView({ report }: { report: unknown }) {
       )}
 
       {/* Export */}
-      <div className="export-bar flex gap-3 pt-4 border-t border-gray-100">
+      <div className="export-bar pt-4 border-t border-gray-100">
+        <div className="flex gap-3">
         <button
-          onClick={downloadPDF}
-          disabled={pdfLoading}
-          className="flex-1 py-2.5 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          onClick={() => window.print()}
+          className="flex-1 py-2.5 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a] transition-colors"
         >
-          {pdfLoading ? (r.language === 'zh' ? '生成中…' : 'Generating…') : t('report.export.pdf')}
+          {r.language === 'zh' ? '按 Command+P / Ctrl+P 下载 PDF' : 'Press Cmd+P / Ctrl+P to Save PDF'}
         </button>
         <button onClick={downloadWord} className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">{t('report.export.word')}</button>
         <button
@@ -336,6 +287,10 @@ export default function ReportView({ report }: { report: unknown }) {
         >
           💬 {t('feedback.button')}
         </button>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          {r.language === 'zh' ? '打印时选择"保存为 PDF"' : 'In the print dialog, choose "Save as PDF"'}
+        </p>
       </div>
 
       {/* Feedback Modal */}
