@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { jsPDF as JsPDFType } from 'jspdf';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Competitor {
@@ -49,7 +50,7 @@ export default function ReportView({ report }: { report: unknown }) {
   const { t } = useLanguage();
   const r = report as Report;
   const reportRef = useRef<HTMLDivElement>(null);
-  const [showPrintHint, setShowPrintHint] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackUseCase, setFeedbackUseCase] = useState('');
   const [feedbackImprove, setFeedbackImprove] = useState('');
@@ -74,8 +75,51 @@ export default function ReportView({ report }: { report: unknown }) {
     URL.revokeObjectURL(url);
   }
 
-  function downloadPDF() {
-    setShowPrintHint(true);
+  async function downloadPDF() {
+    if (!reportRef.current || pdfLoading) return;
+    setPdfLoading(true);
+
+    // Temporarily hide UI-only elements that shouldn't appear in the PDF
+    const hidden: HTMLElement[] = [];
+    reportRef.current.querySelectorAll<HTMLElement>('.export-bar, .print-hint').forEach(el => {
+      hidden.push(el);
+      el.style.display = 'none';
+    });
+
+    try {
+      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      // A4 dimensions in mm
+      const pageW = 210;
+      const pageH = 297;
+      const imgH = (canvas.height * pageW) / canvas.width;
+
+      const pdf: JsPDFType = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      let y = 0;
+      while (y < imgH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, -y, pageW, imgH);
+        y += pageH;
+      }
+
+      pdf.save(`${r.product}.pdf`);
+    } finally {
+      hidden.forEach(el => { el.style.display = ''; });
+      setPdfLoading(false);
+    }
   }
 
   async function submitFeedback() {
@@ -116,29 +160,8 @@ export default function ReportView({ report }: { report: unknown }) {
     threats: { bg: 'bg-red-50', label: 'text-red-700', text: 'text-red-800' }
   };
 
-  const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform);
-
   return (
     <div ref={reportRef} className="max-w-4xl mx-auto px-4 py-8">
-      {showPrintHint && (
-        <div className="export-bar print-hint mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-5 py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">🖨️</span>
-            <div>
-              <div className="text-sm font-medium text-blue-900">
-                按 <kbd className="bg-white border border-blue-300 rounded px-1.5 py-0.5 text-xs font-mono">
-                  {isMac ? '⌘ Cmd' : 'Ctrl'}
-                </kbd> + <kbd className="bg-white border border-blue-300 rounded px-1.5 py-0.5 text-xs font-mono">P</kbd> 打印 / 保存为 PDF
-              </div>
-              <div className="text-xs text-blue-600 mt-0.5">在打印对话框中选择"存储为 PDF"即可下载</div>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowPrintHint(false)}
-            className="text-blue-400 hover:text-blue-700 text-lg leading-none"
-          >✕</button>
-        </div>
-      )}
       <div className="mb-6">
         <a
           href="/"
@@ -299,8 +322,12 @@ export default function ReportView({ report }: { report: unknown }) {
 
       {/* Export */}
       <div className="export-bar flex gap-3 pt-4 border-t border-gray-100">
-        <button onClick={downloadPDF} className="flex-1 py-2.5 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a] transition-colors">
-          {t('report.export.pdf')}
+        <button
+          onClick={downloadPDF}
+          disabled={pdfLoading}
+          className="flex-1 py-2.5 bg-[#1A5FA8] text-white text-sm rounded-lg hover:bg-[#154d8a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {pdfLoading ? (r.language === 'zh' ? '生成中…' : 'Generating…') : t('report.export.pdf')}
         </button>
         <button onClick={downloadWord} className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">{t('report.export.word')}</button>
         <button
