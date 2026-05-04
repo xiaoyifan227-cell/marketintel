@@ -90,7 +90,7 @@ JSON 结构：
       "growth": "+XX% YoY",
       "threat": "high或medium或low",
       "isTop": true或false,
-      "website": "100%确定的官网URL，不确定填\"\""
+      "website": "该公司官网URL，必须100%确定真实存在，格式必须是 https://www.xxx.com，有任何不确定就填\"\"，宁可不显示也不填错误链接"
     }
   ],
   "marketShareData": { "labels": ["公司名数组"], "values": [数字数组总和100] },
@@ -152,7 +152,7 @@ JSON structure:
       "growth": "+XX% YoY",
       "threat": "high or medium or low",
       "isTop": true or false,
-      "website": "URL you are 100% certain about, else \"\""
+      "website": "Company's official website URL — must be 100% certain it exists, format must be https://www.xxx.com — if any doubt at all use \"\", never guess"
     }
   ],
   "marketShareData": { "labels": ["company names"], "values": [numbers summing to 100] },
