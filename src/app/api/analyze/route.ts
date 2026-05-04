@@ -233,16 +233,23 @@ JSON structure:
           .map(b => b.text)
           .join('');
 
+        console.log('[analyze] stop_reason:', message.stop_reason);
+        console.log('[analyze] fullText length:', fullText.length);
+        console.log('[analyze] fullText (first 2000 chars):', fullText.slice(0, 2000));
+        console.log('[analyze] fullText (last 500 chars):', fullText.slice(-500));
+
         let reportData;
         try {
           const start = fullText.indexOf('{');
           const end = fullText.lastIndexOf('}');
-          if (start === -1 || end === -1) throw new Error('No JSON');
+          if (start === -1 || end === -1) throw new Error('No JSON found in response');
           let jsonStr = fullText.slice(start, end + 1);
           jsonStr = jsonStr.replace(/<[^>]*>/g, '');
           jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+          console.log('[analyze] jsonStr (first 500 chars):', jsonStr.slice(0, 500));
           reportData = JSON.parse(jsonStr);
         } catch(e) {
+          console.error('[analyze] JSON parse error:', e instanceof Error ? e.message : e);
           emit({ error: '报告解析失败，请重试' });
           return;
         }
