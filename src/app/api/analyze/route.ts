@@ -45,14 +45,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { query, market, style, language } = await req.json();
+  const { query, language } = await req.json();
 
   const isZh = language === 'zh';
 
-  // styleOverride is appended AFTER the JSON template so it explicitly overrides the example counts
   const styleOverride = isZh
-    ? (style === 'detailed'
-        ? `
+    ? `
 【风格强制约束：详细版 — 必须严格遵守，优先级高于上方示例数量】
 · competitors 数组：必须恰好包含 6-8 家竞品
 · summary 字段：必须约 200 字，详细描述市场背景与竞争格局
@@ -60,70 +58,17 @@ export async function POST(req: NextRequest) {
 · swot 四个子数组各自必须恰好包含 4 条
 · strategy 字段：必须约 300 字，含具体建议
 · 每个竞品的 strength、weakness、positioning 字段均须详细填写（不少于 30 字）`
-        : style === 'consulting'
-        ? `
-【风格强制约束：咨询版 — 必须严格遵守，优先级高于上方示例数量】
-· competitors 数组：必须恰好包含 6-8 家竞品
-· summary 字段：必须约 300 字，使用正式商业语言，以量化数据支撑每个论点
-· trends 数组：必须恰好包含 5 条，每条 description 必须含量化影响评估（如"预计提升市占率 X%"）
-· swot 四个子数组各自必须恰好包含 5 条
-· strategy 字段：必须约 400 字，用序号列出具体可执行建议，每条建议须包含预期收益或量化指标
-· 全文使用麦肯锡/BCG风格的严谨专业商业顾问语气，避免口语化表达`
-        : `
-【风格强制约束：简洁版 — 必须严格遵守，优先级高于上方示例数量】
-· competitors 数组：必须恰好包含 4 家竞品，不多不少
-· summary 字段：必须严格控制在 50 字以内
-· trends 数组：必须恰好包含 3 条
-· swot 四个子数组各自必须恰好包含 2 条
-· strategy 字段：约 150 字，精简直接
-· 每个竞品的 strength、weakness 字段：一句话简短描述即可`)
-    : (style === 'detailed'
-        ? `
+    : `
 [STYLE ENFORCEMENT: Detailed — MANDATORY, overrides example counts above]
 · competitors array: must contain exactly 6-8 entries
 · summary field: must be ~200 words, covering market background and competitive dynamics
 · trends array: must contain exactly 5 items; each description must be 60+ words
 · each swot sub-array must contain exactly 4 items
 · strategy field: must be ~300 words with specific recommendations
-· Each competitor's strength, weakness, positioning fields must be detailed (30+ words each)`
-        : style === 'consulting'
-        ? `
-[STYLE ENFORCEMENT: Consulting — MANDATORY, overrides example counts above]
-· competitors array: must contain exactly 6-8 entries
-· summary field: must be ~300 words in formal business language, every claim backed by quantitative data
-· trends array: must contain exactly 5 items; each description must include quantified impact (e.g. "expected to capture X% share")
-· each swot sub-array must contain exactly 5 items
-· strategy field: must be ~400 words with numbered actionable recommendations, each including expected outcomes or KPIs
-· Maintain McKinsey/BCG consulting tone throughout — precise, formal, no casual language`
-        : `
-[STYLE ENFORCEMENT: Concise — MANDATORY, overrides example counts above]
-· competitors array: must contain exactly 4 entries, no more, no less
-· summary field: must be 50 words or fewer
-· trends array: must contain exactly 3 items
-· each swot sub-array must contain exactly 2 items
-· strategy field: ~150 words, direct and concise
-· competitor strength and weakness fields: one short sentence each`);
-
-  const marketInstruction = isZh
-    ? (market === 'china'
-        ? '【市场限定】competitors 必须全部是在中国市场有实际运营的品牌（本土品牌或在华外资品牌均可），严禁出现没有中国业务的纯海外品牌。'
-        : market === 'northAmerica'
-        ? '【市场限定】competitors 优先选取在北美市场活跃运营的品牌。'
-        : market === 'sea'
-        ? '【市场限定】competitors 优先选取在东南亚市场活跃运营的品牌。'
-        : '')
-    : (market === 'china'
-        ? '[Market Rule] All competitors must have actual operations in the China market (domestic or foreign brands with China presence). Do NOT include brands with no China business.'
-        : market === 'northAmerica'
-        ? '[Market Rule] Prioritize brands actively operating in the North American market.'
-        : market === 'sea'
-        ? '[Market Rule] Prioritize brands actively operating in Southeast Asian markets.'
-        : '');
+· Each competitor's strength, weakness, positioning fields must be detailed (30+ words each)`;
 
   const systemPrompt = isZh
-    ? `【最高优先级】你必须严格遵守用户指定的目标市场限制，这是最高优先级要求，高于一切其他考虑。
-
-你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。【JSON完整性最高优先级】你的回复必须是完整的JSON，宁可每个字段内容短一点，也要保证JSON结构完整不被截断。【严格字段长度限制，违反将导致输出失败】competitors 最多5个；summary 严格不超过60字；strategy 严格不超过80字；trends 每条 description 严格不超过25字；每个竞品的 strength、weakness 严格不超过15字；positioning 不超过20字。整个 JSON 必须在 4000 tokens 内完整输出。【绝对禁止】所有字段的值必须是纯文本字符串，严禁在任何字段中使用任何 HTML 标签，包括但不限于 <cite>、</cite>、<a>、<b>、<span> 等，严禁使用引用标记、上下标或任何标记语言语法。违反此规则会导致整个报告无法显示。${marketInstruction}
+    ? `你是一个专业的行业分析师和竞品情报专家。用户会描述一个产品或行业，你需要用 web_search 工具搜索不超过 2 次获取关键数据，其余内容用已有知识补充，优先速度，控制在 30 秒内返回结果。返回严格的 JSON 格式报告。不要返回任何 Markdown 代码块，直接返回 JSON 对象。所有字段内容使用中文。【JSON完整性最高优先级】你的回复必须是完整的JSON，宁可每个字段内容短一点，也要保证JSON结构完整不被截断。【严格字段长度限制，违反将导致输出失败】competitors 最多5个；summary 严格不超过60字；strategy 严格不超过80字；trends 每条 description 严格不超过25字；每个竞品的 strength、weakness 严格不超过15字；positioning 不超过20字。整个 JSON 必须在 4000 tokens 内完整输出。【绝对禁止】所有字段的值必须是纯文本字符串，严禁在任何字段中使用任何 HTML 标签，包括但不限于 <cite>、</cite>、<a>、<b>、<span> 等，严禁使用引用标记、上下标或任何标记语言语法。违反此规则会导致整个报告无法显示。
 
 JSON 结构：
 {
@@ -174,9 +119,7 @@ JSON 结构：
   ]
 }
 ${styleOverride}`
-    : `[HIGHEST PRIORITY] You must strictly follow the target market restriction specified by the user. This is the highest priority requirement, overriding all other considerations.
-
-You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. [JSON COMPLETENESS — HIGHEST PRIORITY] Your response must be a complete, valid JSON object. Keep individual field content shorter if needed, but never truncate the JSON structure. [STRICT FIELD LENGTH LIMITS — violations will cause output failure] Max 5 competitors; summary: max 60 words; strategy: max 80 words; each trend description: max 25 words; each competitor's strength and weakness: max 15 words; positioning: max 20 words. The entire JSON must fit within 4000 tokens. [ABSOLUTE RULE] Every field value must be plain text only — never use any HTML tags in any field, including <cite>, </cite>, <a>, <b>, <span>, or any other tag. Never use citation markers, superscripts, or any markup syntax. Violations will cause the entire report to fail to render. ${marketInstruction}
+    : `You are a professional market analyst and competitive intelligence expert. The user will describe a product or industry. Use web_search at most 2 times to get key data points, then fill in the rest from your existing knowledge — prioritize speed and return results within 30 seconds. Return a strict JSON report. No Markdown code blocks — return raw JSON only. All field content must be in English. [JSON COMPLETENESS — HIGHEST PRIORITY] Your response must be a complete, valid JSON object. Keep individual field content shorter if needed, but never truncate the JSON structure. [STRICT FIELD LENGTH LIMITS — violations will cause output failure] Max 5 competitors; summary: max 60 words; strategy: max 80 words; each trend description: max 25 words; each competitor's strength and weakness: max 15 words; positioning: max 20 words. The entire JSON must fit within 4000 tokens. [ABSOLUTE RULE] Every field value must be plain text only — never use any HTML tags in any field, including <cite>, </cite>, <a>, <b>, <span>, or any other tag. Never use citation markers, superscripts, or any markup syntax. Violations will cause the entire report to fail to render.
 
 JSON structure:
 {
@@ -227,23 +170,11 @@ JSON structure:
   ]
 }`;
 
-  function buildUserMessage(q: string, m: string, zh: boolean): string {
+  function buildUserMessage(q: string, zh: boolean): string {
     if (zh) {
-      if (m === 'china')
-        return `请分析：${q}。【重要限制】目标市场严格限定为中国大陆市场，所有竞品必须是在中国有实际销售和运营的品牌，优先中国本土品牌，外资品牌必须在中国有本地化运营才能列入。市场规模数据必须是中国市场数据，不是全球数据。`;
-      if (m === 'northAmerica')
-        return `请分析：${q}。【重要限制】目标市场严格限定为北美市场（美国+加拿大），所有竞品必须是在北美有实际业务的品牌，市场规模数据必须是北美市场数据。`;
-      if (m === 'sea')
-        return `请分析：${q}。【重要限制】目标市场严格限定为东南亚市场，所有竞品必须是在东南亚有实际业务的品牌，市场规模数据必须是东南亚市场数据。`;
-      return `请分析：${q}。目标市场：全球市场，列出全球主要竞品。`;
+      return `请分析：${q}`;
     } else {
-      if (m === 'china')
-        return `Please analyze: ${q}. [STRICT CONSTRAINT] Target market is mainland China only. All competitors must have actual sales and operations in China. Prioritize Chinese domestic brands; foreign brands only qualify if they have localized operations in China. Market size data must be China market figures, not global.`;
-      if (m === 'northAmerica')
-        return `Please analyze: ${q}. [STRICT CONSTRAINT] Target market is North America (US + Canada) only. All competitors must have actual business in North America. Market size data must be North American figures.`;
-      if (m === 'sea')
-        return `Please analyze: ${q}. [STRICT CONSTRAINT] Target market is Southeast Asia only. All competitors must have actual business in Southeast Asia. Market size data must be Southeast Asian figures.`;
-      return `Please analyze: ${q}. Target market: global. List the major global competitors.`;
+      return `Please analyze: ${q}`;
     }
   }
 
@@ -264,7 +195,7 @@ JSON structure:
           max_tokens: 4000,
           system: systemPrompt,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: buildUserMessage(query, market, isZh) }]
+          messages: [{ role: 'user', content: buildUserMessage(query, isZh) }]
         });
 
         let searchCount = 0;

@@ -8,14 +8,9 @@ export default function Home() {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [market, setMarket] = useState('global');
-  const [style, setStyle] = useState('concise');
   const [loading, setLoading] = useState(false);
   const [progressLines, setProgressLines] = useState<string[]>([]);
   const [error, setError] = useState('');
-
-  const markets = ['global', 'china', 'northAmerica', 'sea'] as const;
-  const styles = ['concise', 'detailed', 'consulting'] as const;
 
   async function handleSubmit() {
     if (!query.trim()) { setError(t('errors.emptyInput')); return; }
@@ -27,7 +22,7 @@ export default function Home() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, market, style, language: locale })
+        body: JSON.stringify({ query, language: locale })
       });
 
       if (!res.ok) {
@@ -97,42 +92,10 @@ export default function Home() {
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
-          <div className="flex items-center gap-2 flex-wrap mt-4 pt-4 border-t border-gray-100">
-            <span className="text-xs text-gray-400">{t('home.marketLabel')}:</span>
-            {markets.map(m => (
-              <button
-                key={m}
-                onClick={() => setMarket(m)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  market === m
-                    ? 'bg-blue-50 border-blue-300 text-blue-700'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-              >
-                {t(`home.markets.${m}`)}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400">{t('home.styleLabel')}:</span>
-              {styles.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setStyle(s)}
-                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                    style === s
-                      ? 'bg-violet-50 border-violet-300 text-violet-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  {t(`home.styles.${s}`)}
-                </button>
-              ))}
-            </div>
+          <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
             <button
               onClick={handleSubmit}
-              className="bg-[#1A5FA8] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#154d8a] transition-colors whitespace-nowrap ml-4"
+              className="bg-[#1A5FA8] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#154d8a] transition-colors"
             >
               {t('home.submitBtn')}
             </button>
